@@ -8,12 +8,6 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-var (
-	builtInUsers     = []string{types.Admin.String(), types.Ops.String()}
-	newUsers         = []string{"xxx", "yyy-4", "zzz_@"}
-	invalidUsernames = []string{"test$!", "%6ADF7*)(", "docstest6^$)_$#", "~123$sdsdf"}
-)
-
 // TestBuiltinLocalUsers tests that builtInUsers are pre-defined in the system
 func (s *systemtestSuite) TestBuiltinLocalUsers(c *C) {
 	runTest(func(ms *MockServer) {
@@ -175,92 +169,6 @@ func (s *systemtestSuite) TestInvalidUserTokens(c *C) {
 	})
 }
 
-// userUpdateEndpoint tests update on local user
-func (s *systemtestSuite) userUpdate(c *C) {
-
-	runTest(func(ms *MockServer) {
-		token := adminToken(c)
-
-		for _, username := range newUsers {
-			// add new local_user to the system
-			data := `{"username":"` + username + `","password":"` + username + `", "disable":false}`
-			respBody := `{"username":"` + username + `","first_name":"","last_name":"","disable":false}`
-			s.addLocalUser(c, data, respBody, token)
-
-			// try login using `username`
-			_ = loginAs(c, username, username)
-
-			// update `testuser` details
-			data = `{"first_name":"Temp", "last_name": "User"}`
-			respBody = `{"username":"` + username + `","first_name":"Temp","last_name":"User","disable":false}`
-			s.updateLocalUser(c, username, data, respBody, token)
-
-			// try login again using `username` after update
-			_ = loginAs(c, username, username)
-
-			// update `username`'s password
-			data = `{"password":"test"}`
-			s.updateLocalUser(c, username, data, respBody, token)
-
-			// try login again using old password
-			testuserToken, resp, err := login(username, username)
-			c.Assert(err, IsNil)
-			c.Assert(resp.StatusCode, Equals, 401)
-			c.Assert(len(testuserToken), Equals, 0)
-
-			// try login again using new password
-			_ = loginAs(c, username, "test")
-
-			// test updating the user details using the user's token
-			userToken := loginAs(c, username, "test")
-			data = `{"first_name":"Test", "last_name": "User"}`
-			respBody = `{"username":"` + username + `","first_name":"Test","last_name":"User","disable":false}`
-			s.updateLocalUser(c, username, data, respBody, userToken)
-
-			// update `username`'s password using his/her token
-			data = `{"password":"test!"}`
-			s.updateLocalUser(c, username, data, respBody, userToken)
-		}
-	})
-}
-
-// builtInUserUpdate tests built-in user update functionality
-func (s *systemtestSuite) builtInUserUpdate(c *C) {
-
-	runTest(func(ms *MockServer) {
-		token := adminToken(c)
-
-		for _, username := range builtInUsers {
-			// update user details
-			data := `{"first_name":"Built-in", "last_name": "User", "disable":false}`
-			respBody := `{"username":"` + username + `","first_name":"Built-in","last_name":"User","disable":false}`
-			s.updateLocalUser(c, username, data, respBody, token)
-
-			// login
-			testuserToken := loginAs(c, username, username)
-			c.Assert(len(testuserToken), Not(Equals), 0)
-
-			// update password
-			data = `{"password":"test"}`
-			s.updateLocalUser(c, username, data, respBody, token)
-
-			// try login again using old password
-			testuserToken, resp, err := login(username, username)
-			c.Assert(err, IsNil)
-			c.Assert(resp.StatusCode, Equals, 401)
-			c.Assert(len(testuserToken), Equals, 0)
-
-			// try login again using new password
-			testuserToken = loginAs(c, username, "test")
-			c.Assert(len(testuserToken), Not(Equals), 0)
-
-			// revert password so that it wont block other tests
-			data = `{"password":"` + username + `"}`
-			s.updateLocalUser(c, username, data, respBody, token)
-		}
-	})
-}
-
 // TestLocalUserDeleteEndpoint tests auth_proxy's local user delete endpoint
 func (s *systemtestSuite) TestLocalUserDeleteEndpoint(c *C) {
 
@@ -302,22 +210,4 @@ func (s *systemtestSuite) TestLocalUserDeleteEndpoint(c *C) {
 			c.Assert(len(body), Not(Equals), 0)
 		}
 	})
-}
-
-// addLocalUser helper function for the tests
-func (s *systemtestSuite) addLocalUser(c *C, data, expectedRespBody, token string) {
-	endpoint := proxy.V1Prefix + "/local_users"
-
-	resp, body := proxyPost(c, token, endpoint+"/", []byte(data))
-	c.Assert(resp.StatusCode, Equals, 201)
-	c.Assert(string(body), DeepEquals, expectedRespBody)
-}
-
-// updateLocalUser helper function for the tests
-func (s *systemtestSuite) updateLocalUser(c *C, username, data, expectedRespBody, token string) {
-	endpoint := proxy.V1Prefix + "/local_users/" + username
-
-	resp, body := proxyPatch(c, token, endpoint+"/", []byte(data))
-	c.Assert(resp.StatusCode, Equals, 200)
-	c.Assert(string(body), DeepEquals, expectedRespBody)
 }

@@ -7,35 +7,6 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-var endpoint = proxy.V1Prefix + "/ldap_configuration" + "/"
-
-// addLdapConfiguration helper function for the tests
-func (s *systemtestSuite) addLdapConfiguration(c *C, token, data string) {
-	resp, _ := proxyPut(c, token, endpoint, []byte(data))
-	c.Assert(resp.StatusCode, Equals, 200)
-}
-
-// deleteLdapConfiguration helper function for the tests
-func (s *systemtestSuite) deleteLdapConfiguration(c *C, token string) {
-	resp, body := proxyDelete(c, token, endpoint)
-	c.Assert(resp.StatusCode, Equals, 204)
-	c.Assert(body, DeepEquals, []byte{})
-}
-
-// getLdapConfiguration helper function for the tests
-func (s *systemtestSuite) getLdapConfiguration(c *C, token string) []byte {
-	resp, body := proxyGet(c, token, endpoint)
-	c.Assert(resp.StatusCode, Equals, 200)
-
-	return body
-}
-
-// updateLdapConfiguration helper function for the tests
-func (s *systemtestSuite) updateLdapConfiguration(c *C, token, data string) {
-	resp, _ := proxyPatch(c, token, endpoint, []byte(data))
-	c.Assert(resp.StatusCode, Equals, 200)
-}
-
 // NOTE: LDAP operations are admin only
 
 // TestLdapAddEndpoint tests LDAP add endpoint

@@ -11,18 +11,6 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-const (
-	// XXX: Yuva's dev server
-	ldapServer        = "10.193.231.158"
-	ldapPassword      = "C1ntainer$"
-	ldapAdminPassword = "C1ntainer$!"
-	ldapTestUsername  = "test_user"
-	tlsCertIssuedTo   = "WIN-EDME78NSVJO.contiv.ad.local"
-
-	// use this when testing unauthenticated endpoints instead of ""
-	noToken = ""
-)
-
 // TODO: the usernames and passwords here are currently hardcoded in lieu of
 //       having a package/datastore for doing local user management.
 //       See Test() in init_test.go for where that would be done.
@@ -276,24 +264,4 @@ func (s *systemtestSuite) TestPOSTBody(c *C) {
 		_, responseBody := proxyPost(c, token, endpoint, []byte(data))
 		c.Assert(string(responseBody), Equals, data)
 	})
-}
-
-func (s *systemtestSuite) getRunningLdapConfig(startTLS bool) string {
-	ldapConfig := `"server":"` + ldapServer + `",` +
-		`"port":5678,` +
-		`"base_dn":"DC=contiv,DC=ad,DC=local",` +
-		`"service_account_dn":"CN=Service Account,CN=Users,DC=contiv,DC=ad,DC=local",` +
-		`"service_account_password":"` + ldapPassword + `"`
-
-	if startTLS {
-		return `{` + ldapConfig + `,` +
-			`"start_tls":true,` +
-			`"insecure_skip_verify":false,` +
-			`"tls_cert_issued_to":"` + tlsCertIssuedTo + `"}`
-	}
-
-	return `{` + ldapConfig + `,` +
-		`"start_tls":false,` +
-		`"insecure_skip_verify":false,` +
-		`"tls_cert_issued_to":""}`
 }

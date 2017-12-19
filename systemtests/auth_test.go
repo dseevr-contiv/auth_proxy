@@ -1,7 +1,6 @@
 package systemtests
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/contiv/auth_proxy/common"
@@ -346,48 +345,4 @@ func (s *systemtestSuite) TestAuthorizationGetEndpoints(c *C) {
 		c.Assert(len(s.getAuthorizations(c, adToken)), Equals, 1)
 
 	})
-}
-
-// addAuthorization helper function for the tests
-func (s *systemtestSuite) addAuthorization(c *C, data, token string) proxy.GetAuthorizationReply {
-	endpoint := proxy.V1Prefix + "/authorizations"
-
-	resp, body := proxyPost(c, token, endpoint+"/", []byte(data))
-	c.Assert(resp.StatusCode, Equals, 201)
-
-	authz := proxy.GetAuthorizationReply{}
-	c.Assert(json.Unmarshal(body, &authz), IsNil)
-	return authz
-}
-
-// getAuthorization helper function for the tests
-func (s *systemtestSuite) getAuthorization(c *C, authzUUID, token string) proxy.GetAuthorizationReply {
-	endpoint := proxy.V1Prefix + "/authorizations/" + authzUUID + "/"
-
-	resp, body := proxyGet(c, token, endpoint)
-	c.Assert(resp.StatusCode, Equals, 200)
-
-	authz := proxy.GetAuthorizationReply{}
-	c.Assert(json.Unmarshal(body, &authz), IsNil)
-	return authz
-}
-
-// getAuthorizations helper function for the tests
-func (s *systemtestSuite) getAuthorizations(c *C, token string) []proxy.GetAuthorizationReply {
-	endpoint := proxy.V1Prefix + "/authorizations" + "/"
-
-	resp, body := proxyGet(c, token, endpoint)
-	c.Assert(resp.StatusCode, Equals, 200)
-
-	authzs := []proxy.GetAuthorizationReply{}
-	c.Assert(json.Unmarshal(body, &authzs), IsNil)
-	return authzs
-}
-
-// deleteAuthorization helper function for the tests
-func (s *systemtestSuite) deleteAuthorization(c *C, authzUUID, token string) {
-	endpoint := proxy.V1Prefix + "/authorizations/" + authzUUID + "/"
-
-	resp, _ := proxyDelete(c, token, endpoint)
-	c.Assert(resp.StatusCode, Equals, 204)
 }
